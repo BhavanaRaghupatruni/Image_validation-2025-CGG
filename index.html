@@ -1,0 +1,143 @@
+index1.html    <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Validation</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      text-align: center;
+      margin: 40px;
+      background-color: #f4f4f4;
+    }
+    h1 {
+      color: #333;
+      font-size: 2.5rem;
+    }
+    form {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+      display: inline-block;
+      max-width: 500px;
+      width: 100%;
+    }
+    input, button {
+      margin-top: 10px;
+      padding: 12px;
+      font-size: 16px;
+      width: 100%;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    button {
+      cursor: pointer;
+      background: #28a745;
+      color: white;
+      border: none;
+      transition: background 0.3s ease;
+    }
+    button:hover {
+      background: #218838;
+    }
+    #file-names {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #555;
+    }
+    #validation-results {
+      margin-top: 20px;
+      padding: 20px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+      max-width: 800px;
+      margin: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      padding: 12px;
+      border: 1px solid #ddd;
+      text-align: left;
+    }
+    th {
+      background: #007bff;
+      color: white;
+    }
+    a {
+      color: #007bff;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    .error {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <h1>Upload Images for Validation</h1>
+ 
+  <form id="upload-form" enctype="multipart/form-data">
+    <input type="file" id="files" name="files" multiple accept="image/*">
+    <p id="file-names"></p>
+    <button type="submit">Upload</button>
+  </form>
+ 
+  <div id="validation-results"></div>
+ 
+  <script>
+    document.getElementById('files').addEventListener('change', function() {
+      let fileList = Array.from(this.files).map(file => file.name).join(', ');
+      document.getElementById('file-names').textContent = fileList || "No files selected.";
+    });
+ 
+    document.getElementById('upload-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const files = document.getElementById('files').files;
+      if (files.length === 0) {
+        alert("Please select at least one image.");
+        return;
+      }
+ 
+      const formData = new FormData();
+      for (let file of files) {
+        formData.append('files', file);
+      }
+ 
+      try {
+        const response = await fetch('/validate-images/', { method: 'POST', body: formData });
+        const result = await response.json();
+ 
+        let table = `<table><tr><th>Filename</th><th>Image Path</th><th>Status</th><th>Reason</th></tr>`;
+        result.validation_results.forEach(item => {
+          table += `<tr>
+                      <td>${item.filename}</td>
+                      <td><a href="${item.image_path}" target="_blank">${item.image_path}</a></td>
+                      <td>${item.status}</td>
+                      <td>${item.reason || 'Valid'}</td>
+                    </tr>`;
+        });
+        table += `</table>`;
+ 
+        document.getElementById('validation-results').innerHTML = table;
+ 
+        // Provide a link to download the CSV file
+        const csvFileLink = `<a href="${result.csv_file}" download style="display:inline-block;margin-top:20px;padding:10px;background:#007bff;color:white;border-radius:5px;">Download Validation Results (CSV)</a>`;
+        document.getElementById('validation-results').innerHTML += `<p>${csvFileLink}</p>`;
+      } catch (error) {
+        document.getElementById('validation-results').innerHTML = `<p class="error">Error: Unable to process the request.</p>`;
+      }
+    });
+  </script>
+</body>
+</html>
+ 
+ 
